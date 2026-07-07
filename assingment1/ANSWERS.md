@@ -135,7 +135,7 @@ Exactly **2,335 distinct users** were affected by the checkout processing failur
 
   The distribution is computed directly by `analyze_logs.py` and reconciles exactly: 2,286 + (48 × 2) + (1 × 3) = 2,385 failed tasks across 2,335 users. The single user with three failed attempts is `user_id=38397`, whose checkout requests were received at `14:36:41.336`, `15:46:58.037`, and `18:55:20.864`.
 
-* **Sample Log Traces for a User with Multiple Failures (User 85171):**
+* **Sample Log Traces for a User with Multiple Attempts (User 85171 — one failure, then one successful retry):**
   - First attempt at `16:20:01.325` (Failed in worker at `16:20:03.046`):
     ```log
     web.log:    2026-07-02 16:20:01.325 INFO [request] method=POST path=/checkout status=202 latency_ms=57 user_id=85171 request_id=598c06abdaf274a1
@@ -200,7 +200,7 @@ Release `v2.14.3` (commit `219c39f`), deployed to production at `14:31:13.000`, 
 * **Evaluated Durations:** Compared baseline durations of completed checkout tasks before and after the incident to check for performance degradation.
 * **Traced Client Re-attempts:** Audited logs for users who submitted multiple checkout requests, confirming that the upstream resets were intermittent.
 * **Ruled Out Metrics Warnings:** Checked the timing, thread identifiers (`[metrics-worker]`), and target host (`analytics.internal:9092`) of the metrics errors, identifying them as unrelated background noise.
-* **Ruled Out Slow Database Queries:** `web.log` contains 1,500 `WARN [db] slow query` entries against product and cart tables, spanning the full day (`00:02:38` to `23:59:11`) with hourly counts that track overall traffic volume and show no step change at the incident boundary. They are pre-existing performance noise unrelated to the checkout failures.
+* **Ruled Out Slow Database Queries:** `web.log` contains 1,500 `WARN [db] slow query` entries against the `products` (383), `carts` (396), `orders` (375), and `sessions` (346) tables, spanning the full day (`00:02:38` to `23:59:11`) with hourly counts that track overall traffic volume and show no step change at the incident boundary. They are pre-existing performance noise unrelated to the checkout failures.
 * **Ruled Out Authentication Failures:** The 118 `401` responses on `/api/user` begin at `02:24:48`, hours before the incident, and follow the traffic curve. They are routine session expirations, not a cause or symptom of the checkout issue.
 * **Ruled Out Expected 404 Responses:** The 192 `404` responses are confined to `/product/:id` lookups, begin at `03:54:29`, and show no correlation with the incident window. They reflect requests for nonexistent product IDs.
 * **Counted Impacted Users:** Deduplicated the user IDs in the failed checkout records to confirm that 2,335 unique users were affected, with a failed-attempt distribution of 2,286 / 48 / 1 (one, two, and three failures respectively).
