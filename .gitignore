@@ -1,0 +1,6 @@
+# Log files (large production logs)
+*.log
+
+# macOS specific files
+.DS_Store
+__MACOSX/
